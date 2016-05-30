@@ -2,7 +2,7 @@ defmodule CliTest do
   use ExUnit.Case
   doctest Issues
 
-  import Issues.CLI, only: [parse_args: 1]
+  import Issues.CLI, only: [parse_args: 1, process: 1]
 
   test ":help returned by options parsing with -h and --help options" do
     assert parse_args(["-h", "anything"]) == :help
@@ -15,5 +15,9 @@ defmodule CliTest do
 
   test "count is default if two values given" do
     assert parse_args(["user", "project"]) == {"user", "project", 4}
+  end
+
+  test "display help information if :help is given" do
+    assert process(:help) == :ok
   end
 end

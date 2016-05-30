@@ -9,7 +9,10 @@ defmodule Issues.CLI do
   """
 
   def run(argv) do
-    parse_args(argv)
+    argv
+    |> parse_args
+    |> process
+    |> convert_to_list_of_maps
   end
 
   @doc """
@@ -37,5 +40,38 @@ defmodule Issues.CLI do
       _ -> :help
 
     end
+  end
+
+  @doc """
+  Display help information or fetch github issues
+  """
+  def process(:help) do
+    IO.puts """
+      usage: <user> <project> [count | #{@default_count}]
+    """
+    System.halt(0)
+  end
+
+  def process({user, project, _count}) do
+    Issues.GithubIssues.fetch(user, project)
+    |> decode_response
+  end
+
+
+  def sort_into_ascending_order(list_of_issues) do
+    Enum.sort list_of_issues, fn i1, i2 -> i1["created_at"] <= i2["created_at"] end
+  end
+
+  defp decode_response({:ok, body}), do: body
+
+  defp decode_response({:error,error}) do
+    {_, message} = List.keyfind(error, "message", 0)
+    IO.puts "Error fetching from Github: #{message}"
+    System.halt(2)
+  end
+
+  defp convert_to_list_of_maps(list) do
+    list
+    |> Enum.map(&Enum.into(&1, Map.new))
   end
 end
