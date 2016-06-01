@@ -1,5 +1,5 @@
 defmodule Issues.CLI do
-
+  import Issues.TableFormatter, only: [print_table_for_columns: 2]
   @default_count 4
 
   @moduledoc """
@@ -8,11 +8,10 @@ defmodule Issues.CLI do
   table of the last _n_ issues in a github project
   """
 
-  def run(argv) do
+  def main(argv) do
     argv
     |> parse_args
     |> process
-    |> convert_to_list_of_maps
   end
 
   @doc """
@@ -52,9 +51,13 @@ defmodule Issues.CLI do
     System.halt(0)
   end
 
-  def process({user, project, _count}) do
+  def process({user, project, count}) do
     Issues.GithubIssues.fetch(user, project)
     |> decode_response
+    |> convert_to_list_of_maps
+    |> sort_into_ascending_order
+    |> Enum.take(count)
+    |> print_table_for_columns(["number", "created_at", "title"])
   end
 
 
@@ -70,7 +73,7 @@ defmodule Issues.CLI do
     System.halt(2)
   end
 
-  defp convert_to_list_of_maps(list) do
+  def convert_to_list_of_maps(list) do
     list
     |> Enum.map(&Enum.into(&1, Map.new))
   end
